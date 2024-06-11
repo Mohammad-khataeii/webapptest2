@@ -1,51 +1,54 @@
 import express from 'express';
-import cors from 'cors';
-import bodyParser from 'body-parser';
 import session from 'express-session';
 import passport from 'passport';
-import { Strategy as LocalStrategy } from 'passport-local';
-import bcrypt from 'bcryptjs';
-import sqlite3 from 'sqlite3';
+import bodyParser from 'body-parser';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
+import authRoutes from './routes/authRoutes.mjs';
+import userRoutes from './routes/userRoutes.mjs';
+import memeRoutes from './routes/memeRoutes.mjs';
+import captionRoutes from './routes/captionRoutes.mjs';
+import gameRoutes from './routes/gameRoutes.mjs';
+import { ensureAuthenticated } from './middlewares/authMiddleware.mjs';
+import configurePassport from './config/passport.mjs';
+
+// Convert __dirname and __filename to be compatible with ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Initialize Express app
 const app = express();
-const db = new sqlite3.Database('./db.sqlite');
 
-app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
+// Middleware setup
 app.use(bodyParser.json());
-app.use(session({ secret: 'secret', resave: false, saveUninitialized: true }));
+app.use(session({
+  secret: 'your_secret_key', // Replace with a strong secret key
+  resave: false,
+  saveUninitialized: true
+}));
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Define Passport Local Strategy
-passport.use(new LocalStrategy(
-  function (username, password, done) {
-    db.get('SELECT * FROM users WHERE username = ?', [username], (err, user) => {
-      if (err) { return done(err); }
-      if (!user) { return done(null, false); }
-      bcrypt.compare(password, user.password, (err, res) => {
-        if (res) {
-          return done(null, user);
-        } else {
-          return done(null, false);
-        }
-      });
-    });
-  }
-));
+// Passport configuration
+require('./config/passport.mjs')(passport);
 
-passport.serializeUser((user, done) => {
-  done(null, user.id);
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/memes', memeRoutes);
+app.use('/api/captions', captionRoutes);
+app.use('/api/game', gameRoutes);
+
+// Define a simple route to test the server
+app.get('/', (req, res) => {
+  res.send('Server is running');
 });
 
-passport.deserializeUser((id, done) => {
-  db.get('SELECT * FROM users WHERE id = ?', [id], (err, user) => {
-    done(err, user);
-  });
+// Set the port
+const PORT = process.env.PORT || 5000;
+
+// Start the server
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
-
-// Define API routes here
-
-app.listen(5000, () => {
-  console.log('Server is running on port 5000');
-});
-
