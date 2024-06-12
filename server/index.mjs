@@ -5,6 +5,10 @@ import bodyParser from 'body-parser';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap/dist/js/bootstrap.bundle.min';
+
+
 import authRoutes from './routes/authRoutes.mjs';
 import userRoutes from './routes/userRoutes.mjs';
 import memeRoutes from './routes/memeRoutes.mjs';
@@ -17,7 +21,6 @@ import configurePassport from './config/passport.mjs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Initialize Express app
 const app = express();
 
 // Middleware setup
@@ -31,7 +34,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // Passport configuration
-require('./config/passport.mjs')(passport);
+configurePassport(passport);
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -46,7 +49,7 @@ app.get('/', (req, res) => {
 });
 
 // Set the port
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // Start the server
 app.listen(PORT, () => {

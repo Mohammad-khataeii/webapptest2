@@ -1,4 +1,4 @@
-import db from '../config/db.mjs';
+import Game from '../models/Game.mjs';
 
 // Submit game result
 export const submitResult = (req, res) => {
@@ -18,31 +18,15 @@ export const submitResult = (req, res) => {
       }
 
       const isBestMatch = row.is_best_match;
+      const score = isBestMatch ? 1 : 0;
 
-      // Update the user's score if the caption is the best match
-      if (isBestMatch) {
-        db.run(
-          'INSERT INTO games (user_id, score, date) VALUES (?, ?, ?)',
-          [userId, 1, new Date()],
-          function (err) {
-            if (err) {
-              return res.status(500).json({ error: err.message });
-            }
-            res.json({ success: true, isBestMatch: true });
-          }
-        );
-      } else {
-        db.run(
-          'INSERT INTO games (user_id, score, date) VALUES (?, ?, ?)',
-          [userId, 0, new Date()],
-          function (err) {
-            if (err) {
-              return res.status(500).json({ error: err.message });
-            }
-            res.json({ success: true, isBestMatch: false });
-          }
-        );
-      }
+      // Create a new game record
+      Game.create(userId, score, (err, game) => {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+        res.json({ success: true, isBestMatch, game });
+      });
     }
   );
 };
@@ -51,10 +35,10 @@ export const submitResult = (req, res) => {
 export const fetchGameHistory = (req, res) => {
   const userId = req.user.id;
 
-  db.all('SELECT * FROM games WHERE user_id = ? ORDER BY date DESC', [userId], (err, rows) => {
+  Game.fetchByUserId(userId, (err, games) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
-    res.json(rows);
+    res.json(games);
   });
 };

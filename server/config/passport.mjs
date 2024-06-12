@@ -1,18 +1,18 @@
-const LocalStrategy = require('passport-local').Strategy;
-const bcrypt = require('bcryptjs');
-const db = require('./db');
+import { Strategy as LocalStrategy } from 'passport-local';
+import bcrypt from 'bcryptjs';
+import User from '../models/User.mjs';
 
-module.exports = (passport) => {
+export default function configurePassport(passport) {
   passport.use(
     new LocalStrategy((username, password, done) => {
-      db.get('SELECT * FROM users WHERE username = ?', [username], (err, row) => {
+      User.fetchByUsername(username, (err, user) => {
         if (err) return done(err);
-        if (!row) return done(null, false, { message: 'Incorrect username' });
+        if (!user) return done(null, false, { message: 'Incorrect username.' });
 
-        const isValid = bcrypt.compareSync(password, row.password);
-        if (!isValid) return done(null, false, { message: 'Incorrect password' });
+        const isMatch = bcrypt.compareSync(password, user.password);
+        if (!isMatch) return done(null, false, { message: 'Incorrect password.' });
 
-        return done(null, row);
+        return done(null, user);
       });
     })
   );
@@ -22,9 +22,9 @@ module.exports = (passport) => {
   });
 
   passport.deserializeUser((id, done) => {
-    db.get('SELECT * FROM users WHERE id = ?', [id], (err, row) => {
+    User.fetchById(id, (err, user) => {
       if (err) return done(err);
-      done(null, row);
+      done(null, user);
     });
   });
-};
+}

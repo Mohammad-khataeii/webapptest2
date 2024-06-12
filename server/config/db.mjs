@@ -1,8 +1,20 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+import sqlite3 from 'sqlite3';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+import fs from 'fs';
+
+// Convert __dirname and __filename to be compatible with ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Path to the SQLite database file
-const dbPath = path.resolve(__dirname, '../database/meme_game.db');
+const dbDirectory = resolve(__dirname, '../database');
+const dbPath = resolve(dbDirectory, 'meme_game.db');
+
+// Ensure the database directory exists
+if (!fs.existsSync(dbDirectory)) {
+  fs.mkdirSync(dbDirectory, { recursive: true });
+}
 
 // Create or open the database
 const db = new sqlite3.Database(dbPath, (err) => {
@@ -22,7 +34,7 @@ db.serialize(() => {
       username TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
       email TEXT UNIQUE NOT NULL,
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+      createdAt TEXT DEFAULT (datetime('now'))
     )
   `);
 
@@ -31,7 +43,7 @@ db.serialize(() => {
     CREATE TABLE IF NOT EXISTS memes (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       url TEXT NOT NULL,
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+      createdAt TEXT DEFAULT (datetime('now'))
     )
   `);
 
@@ -40,7 +52,7 @@ db.serialize(() => {
     CREATE TABLE IF NOT EXISTS captions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       text TEXT NOT NULL,
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+      createdAt TEXT DEFAULT (datetime('now'))
     )
   `);
 
@@ -51,9 +63,9 @@ db.serialize(() => {
       meme_id INTEGER NOT NULL,
       caption_id INTEGER NOT NULL,
       is_best_match BOOLEAN NOT NULL,
+      createdAt TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (meme_id) REFERENCES memes(id),
-      FOREIGN KEY (caption_id) REFERENCES captions(id),
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+      FOREIGN KEY (caption_id) REFERENCES captions(id)
     )
   `);
 
@@ -63,10 +75,10 @@ db.serialize(() => {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
       score INTEGER NOT NULL,
-      date DATETIME DEFAULT CURRENT_TIMESTAMP,
+      date TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (user_id) REFERENCES users(id)
     )
   `);
 });
 
-module.exports = db;
+export default db;

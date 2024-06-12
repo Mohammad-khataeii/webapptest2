@@ -1,10 +1,10 @@
-const bcrypt = require('bcryptjs');
-const passport = require('passport');
-const jwt = require('jsonwebtoken');
-const db = require('../config/db');
+import bcrypt from 'bcryptjs';
+import passport from 'passport';
+import jwt from 'jsonwebtoken';
+import db from '../config/db.mjs';
 
 // Register a new user
-exports.register = (req, res) => {
+export const register = (req, res) => {
   const { username, password, email } = req.body;
 
   if (!username || !password || !email) {
@@ -32,7 +32,7 @@ exports.register = (req, res) => {
 };
 
 // Login a user
-exports.login = (req, res, next) => {
+export const login = (req, res, next) => {
   passport.authenticate('local', (err, user, info) => {
     if (err) return next(err);
     if (!user) return res.status(400).json({ message: info.message });
@@ -49,7 +49,7 @@ exports.login = (req, res, next) => {
 };
 
 // Logout a user
-exports.logout = (req, res) => {
+export const logout = (req, res) => {
   req.logout((err) => {
     if (err) {
       return res.status(500).json({ error: err.message });
